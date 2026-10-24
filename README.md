@@ -2,6 +2,8 @@
 
 Starts the 5-hour usage windows of Claude Code, several Codex accounts and both Antigravity model groups at fixed times (06, 11, 16, 21 WIB), reports usage to Telegram, and answers `/usage` on demand.
 
+<img src="docs/telegram-usage.png" alt="Telegram reply to /usage: per-account 5-hour and weekly quota with bars and reset times" width="520">
+
 ```
 pinger.timer ──> ping.sh ──> claude / codex (per CODEX_HOME) / agy (per model group)
                     ├──> Healthchecks.io   (dead man's switch)
