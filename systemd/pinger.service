@@ -1,0 +1,13 @@
+[Unit]
+Description=Ping Claude Code, Codex and Antigravity to start the 5-hour window
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@HOME@/pinger/work
+EnvironmentFile=@HOME@/.config/pinger/env
+ExecStart=@HOME@/pinger/ping.sh
+# worst case: 6 targets x 3 attempts x (180 s timeout + 30 s pause), plus usage.py
+TimeoutStartSec=3900

@@ -1,0 +1,16 @@
+[Unit]
+Description=Telegram command listener for pinger
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@HOME@/pinger/work
+EnvironmentFile=@HOME@/.config/pinger/env
+Environment=PYTHONIOENCODING=utf-8
+ExecStart=/usr/bin/python3 @HOME@/pinger/bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

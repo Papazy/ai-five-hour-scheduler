@@ -1,0 +1,10 @@
+[Unit]
+Description=Pinger schedule
+
+[Timer]
+OnCalendar=*-*-* 06,11,16,21:00:00 Asia/Jakarta
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
