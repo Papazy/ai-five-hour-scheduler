@@ -49,11 +49,11 @@ if [ -n "${HC_URL:-}" ]; then
 fi
 
 if [ -n "${TG_BOT_TOKEN:-}" ] && [ -n "${TG_CHAT_ID:-}" ]; then
-  now=$(date '+%H:%M')
+  now=$(date '+%H:%M %Z')
   if [ -z "$failed" ]; then
-    head="✅ <b>Ping $now WIB</b> · all OK"
+    head="✅ <b>Ping $now</b> · all OK"
   else
-    head="❌ <b>Ping $now WIB</b> · failed:$failed"
+    head="❌ <b>Ping $now</b> · failed:$failed"
   fi
   if ! usage=$(PYTHONIOENCODING=utf-8 python3 "$HOME/pinger/usage.py" --html $CODEX_ACCOUNTS 2>&1); then
     echo "usage.py failed:"

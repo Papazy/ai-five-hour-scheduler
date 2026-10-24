@@ -2,7 +2,7 @@
 Description=Pinger schedule
 
 [Timer]
-OnCalendar=*-*-* 06,11,16,21:00:00 Asia/Jakarta
+OnCalendar=*-*-* @SCHEDULE@ @TZ@
 AccuracySec=1s
 Persistent=true
 

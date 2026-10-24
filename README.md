@@ -1,6 +1,6 @@
 # ai-five-hour-scheduler
 
-Starts the 5-hour usage windows of Claude Code, several Codex accounts and both Antigravity model groups at fixed times (06, 11, 16, 21 WIB), reports usage to Telegram, and answers `/usage` on demand.
+Starts the 5-hour usage windows of Claude Code, several Codex accounts and both Antigravity model groups at fixed times you choose (default 06, 11, 16 and 21 in the host timezone), reports usage to Telegram, and answers `/usage` on demand.
 
 <img src="docs/telegram-usage.png" alt="Telegram reply to /usage: per-account 5-hour and weekly quota with bars and reset times" width="520">
 
@@ -20,7 +20,7 @@ All traffic is outbound HTTPS. SSH is reachable only through Tailscale; ufw deni
 | `ping.sh` | Pings every target with timeout and retry, reports to Healthchecks and Telegram, exits 1 if anything failed |
 | `usage.py` | Reads quota: Codex rollout files, `agy -p /usage`, Claude OAuth usage endpoint. `--html` renders the Telegram tables |
 | `bot.py` | Long-polling Telegram listener for `/usage`. Only answers `TG_CHAT_ID` |
-| `systemd/` | Unit templates. `install.sh` fills in `@USER@` and `@HOME@` |
+| `systemd/` | Unit templates. `install.sh` fills in user, home, schedule and timezone |
 | `install.sh` | Idempotent bootstrap for a fresh Ubuntu 24.04 host |
 | `env.example` | Variables expected in `~/.config/pinger/env` |
 
@@ -32,17 +32,10 @@ Clone the repo to `~/pinger` on the host, whatever the repo is called: the scrip
 
 Requirements: Ubuntu 24.04, about 1 GB RAM (install.sh adds 2 GB swap), a user with sudo.
 
-1. Give the host read access to this private repo with a deploy key:
+1. Clone (fork first if you want to keep your own changes):
 
    ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/pinger_deploy -N "" -C "pinger@$(hostname)"
-   cat ~/.ssh/pinger_deploy.pub    # GitHub: repo → Settings → Deploy keys → Add (read-only)
-   cat >> ~/.ssh/config <<'EOF'
-   Host github.com
-     IdentityFile ~/.ssh/pinger_deploy
-     IdentitiesOnly yes
-   EOF
-   git clone git@github.com:Papazy/ai-five-hour-scheduler.git ~/pinger
+   git clone https://github.com/Papazy/ai-five-hour-scheduler.git ~/pinger
    ```
 
 2. Run the installer, then follow the steps it prints:
@@ -52,7 +45,7 @@ Requirements: Ubuntu 24.04, about 1 GB RAM (install.sh adds 2 GB swap), a user w
    ```
 
    - `sudo tailscale up --ssh`, disable key expiry for the machine, then re-run `./install.sh` so ufw is enabled.
-   - Fill `~/.config/pinger/env` (or copy it from the old host, see below), then re-run `./install.sh` to start the bot.
+   - Fill `~/.config/pinger/env` (or copy it from the old host, see below), set your timezone and schedule there if the defaults don't fit, then re-run `./install.sh` to start the bot.
    - Log in once per CLI from `~/pinger/work`: `claude` → `/login`; `CODEX_HOME=~/.codexN codex login --device-auth` for every account (open each link in a private window); `~/.local/bin/agy`.
 
 3. Test:
@@ -90,7 +83,7 @@ Do this while the old host is still running.
 ```bash
 sudo systemctl stop pinger.timer pinger-bot
 mv ~/pinger ~/pinger.old
-git clone git@github.com:Papazy/ai-five-hour-scheduler.git ~/pinger
+git clone https://github.com/Papazy/ai-five-hour-scheduler.git ~/pinger
 cd ~/pinger && ./install.sh
 rm -rf ~/pinger.old    # once the test run is green
 ```
@@ -101,16 +94,25 @@ rm -rf ~/pinger.old    # once the test run is green
 cd ~/pinger && git pull && ./install.sh
 ```
 
-`install.sh` re-renders the units, reloads systemd and restarts the bot. The timer picks up the new `ping.sh` on its next run.
+`install.sh` re-renders the units, reloads systemd, and restarts the timer and the bot. The timer picks up the new `ping.sh` on its next run.
 
 ## Configuration
 
-Defaults live in `ping.sh`; override them in `~/.config/pinger/env`, keeping the quotes:
+Everything is set in `~/.config/pinger/env`. Keep the quotes: the file is read by systemd and also sourced by bash for manual tests. Re-run `./install.sh` after changing the schedule or timezone.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `PINGER_TZ` | `Asia/Jakarta` | Host timezone; also used for the times in reports |
+| `PINGER_SCHEDULE` | `06,11,16,21:00:00` | Time part of a systemd [`OnCalendar`](https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html) expression |
+| `CODEX_ACCOUNTS` | `codex1 codex2 codex3` | One `CODEX_HOME=~/.<name>` per account |
+| `AGY_MODELS` | `agy-gemini:gemini-3.8-flash-low agy-claude:gpt-oss-120b-medium` | `label:model`, one light model per Antigravity quota group |
 
 ```bash
-CODEX_ACCOUNTS="codex1 codex2 codex3"
-AGY_MODELS="agy-gemini:gemini-3.8-flash-low agy-claude:gpt-oss-120b-medium"
+PINGER_TZ="Europe/Berlin"
+PINGER_SCHEDULE="07,12,17,22:00:00"
 ```
+
+Spacing pings 5 hours apart means every window starts on schedule. Keep the Healthchecks cron schedule and timezone in sync with these values.
 
 Adding a Codex account means logging in with `CODEX_HOME=~/.codexN` and adding `codexN` to `CODEX_ACCOUNTS`. Each extra target adds up to 630 s to the worst-case run time, so raise `TimeoutStartSec` in `systemd/pinger.service` if you add many.
 

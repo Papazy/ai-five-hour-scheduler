@@ -8,17 +8,41 @@ ENV_FILE="$HOME/.config/pinger/env"
 ME="$(id -un)"
 
 log() { printf '\n==> %s\n' "$*"; }
+# env_get KEY DEFAULT: value from the env file (quotes stripped), or DEFAULT
+env_get() {
+  local v
+  v="$(grep -oP "^$1=\"?\K[^\"]*" "$ENV_FILE" 2>/dev/null | tail -n 1 || true)"
+  printf '%s' "${v:-$2}"
+}
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 
 [ "$(id -u)" -ne 0 ] || { echo "Run as your normal user, not root." >&2; exit 1; }
 [ "$REPO" = "$HOME/pinger" ] || { echo "Clone the repo to $HOME/pinger (found $REPO)." >&2; exit 1; }
 
+log "Directories and env file"
+mkdir -p "$REPO/work" "$(dirname "$ENV_FILE")"
+chmod 700 "$(dirname "$ENV_FILE")"
+if [ ! -f "$ENV_FILE" ]; then
+  cp "$REPO/env.example" "$ENV_FILE"
+  echo "created $ENV_FILE from env.example: fill it in"
+fi
+chmod 600 "$ENV_FILE"
+chmod +x "$REPO/ping.sh" "$REPO/usage.py" "$REPO/bot.py"
+
+for acc in $(env_get CODEX_ACCOUNTS "codex1 codex2 codex3"); do
+  mkdir -p "$HOME/.$acc"
+done
+
 log "System packages"
 sudo apt-get update -q
 sudo apt-get install -yq curl git python3 unattended-upgrades bubblewrap ufw
 
-log "Timezone"
-sudo timedatectl set-timezone Asia/Jakarta
+log "Timezone and schedule"
+TZ_NAME="$(env_get PINGER_TZ Asia/Jakarta)"
+SCHEDULE="$(env_get PINGER_SCHEDULE 06,11,16,21:00:00)"
+systemd-analyze calendar "*-*-* $SCHEDULE $TZ_NAME" >/dev/null \
+  || { echo "Invalid PINGER_SCHEDULE/PINGER_TZ: '*-*-* $SCHEDULE $TZ_NAME'" >&2; exit 1; }
+sudo timedatectl set-timezone "$TZ_NAME"
 
 log "Swap"
 if swapon --show --noheadings | grep -q .; then
@@ -49,28 +73,15 @@ grep -q '.local/bin' "$HOME/.bashrc" || echo 'export PATH="$HOME/.local/bin:$PAT
 log "Tailscale"
 command -v tailscale >/dev/null || curl -fsSL https://tailscale.com/install.sh | sh
 
-log "Directories and env file"
-mkdir -p "$REPO/work" "$(dirname "$ENV_FILE")"
-chmod 700 "$(dirname "$ENV_FILE")"
-if [ ! -f "$ENV_FILE" ]; then
-  cp "$REPO/env.example" "$ENV_FILE"
-  echo "created $ENV_FILE from env.example: fill it in"
-fi
-chmod 600 "$ENV_FILE"
-chmod +x "$REPO/ping.sh" "$REPO/usage.py" "$REPO/bot.py"
-
-accounts="$(grep -oP '^CODEX_ACCOUNTS="?\K[^"]*' "$ENV_FILE" || true)"
-for acc in ${accounts:-codex1 codex2 codex3}; do
-  mkdir -p "$HOME/.$acc"
-done
-
 log "systemd units"
 for unit in pinger.service pinger.timer pinger-bot.service; do
-  sed -e "s|@USER@|$ME|g" -e "s|@HOME@|$HOME|g" "$REPO/systemd/$unit" \
+  sed -e "s|@USER@|$ME|g" -e "s|@HOME@|$HOME|g" \
+      -e "s|@SCHEDULE@|$SCHEDULE|g" -e "s|@TZ@|$TZ_NAME|g" "$REPO/systemd/$unit" \
     | sudo tee "/etc/systemd/system/$unit" >/dev/null
 done
 sudo systemctl daemon-reload
 sudo systemctl enable --now pinger.timer
+sudo systemctl restart pinger.timer   # pick up a changed schedule
 
 if grep -q '^TG_BOT_TOKEN=.\+' "$ENV_FILE" && grep -q '^TG_CHAT_ID=.\+' "$ENV_FILE"; then
   sudo systemctl enable pinger-bot.service

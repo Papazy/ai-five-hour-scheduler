@@ -14,9 +14,8 @@ import subprocess
 import sys
 import time
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
-WIB = timezone(timedelta(hours=7))
 HOME = os.path.expanduser("~")
 AGY = f"{HOME}/.local/bin/agy"
 AGY_GROUPS = {"Gemini Models": "agy-gemini", "Claude and GPT models": "agy-claude"}
@@ -25,16 +24,16 @@ WARN_PCT = 80
 BAR_WIDTH = 10
 
 
-def to_wib(value):
+def to_local(value):
     if not value:
         return None
     if isinstance(value, (int, float)):
-        return datetime.fromtimestamp(value, WIB)
-    return datetime.fromisoformat(value).astimezone(WIB)
+        return datetime.fromtimestamp(value).astimezone()
+    return datetime.fromisoformat(value).astimezone()   # host timezone, set by install.sh
 
 
 def fmt(value, pattern):
-    dt = to_wib(value)
+    dt = to_local(value)
     return dt.strftime(pattern) if dt else "?"
 
 
