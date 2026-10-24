@@ -1,4 +1,4 @@
-# pinger
+# ai-five-hour-scheduler
 
 Starts the 5-hour usage windows of Claude Code, several Codex accounts and both Antigravity model groups at fixed times (06, 11, 16, 21 WIB), reports usage to Telegram, and answers `/usage` on demand.
 
@@ -24,6 +24,8 @@ All traffic is outbound HTTPS. SSH is reachable only through Tailscale; ufw deni
 
 Secrets never live in the repo. They stay in `~/.config/pinger/env` (mode 600) and in each CLI's own credential store.
 
+Clone the repo to `~/pinger` on the host, whatever the repo is called: the scripts, the units and `install.sh` use that path.
+
 ## Fresh host
 
 Requirements: Ubuntu 24.04, about 1 GB RAM (install.sh adds 2 GB swap), a user with sudo.
@@ -38,7 +40,7 @@ Requirements: Ubuntu 24.04, about 1 GB RAM (install.sh adds 2 GB swap), a user w
      IdentityFile ~/.ssh/pinger_deploy
      IdentitiesOnly yes
    EOF
-   git clone git@github.com:Papazy/pinger.git ~/pinger
+   git clone git@github.com:Papazy/ai-five-hour-scheduler.git ~/pinger
    ```
 
 2. Run the installer, then follow the steps it prints:
@@ -86,7 +88,7 @@ Do this while the old host is still running.
 ```bash
 sudo systemctl stop pinger.timer pinger-bot
 mv ~/pinger ~/pinger.old
-git clone git@github.com:Papazy/pinger.git ~/pinger
+git clone git@github.com:Papazy/ai-five-hour-scheduler.git ~/pinger
 cd ~/pinger && ./install.sh
 rm -rf ~/pinger.old    # once the test run is green
 ```
