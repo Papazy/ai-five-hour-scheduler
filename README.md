@@ -128,3 +128,7 @@ Adding a Codex account means logging in with `CODEX_HOME=~/.codexN` and adding `
 - Claude usage comes from an undocumented endpoint and needs the full `/login` credentials, not a `setup-token`.
 - Between pings, `/usage` shows Codex figures from the last ping, and Claude as `stale` once its access token has expired. Refreshing either would mean running the CLI, which starts a 5-hour window at the wrong time.
 - Telegram on some Android clients does not render code blocks in a monospace font, so the report keeps the bar column first and has no header row.
+
+## License
+
+[MIT](LICENSE). Not affiliated with Anthropic, OpenAI or Google.
