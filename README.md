@@ -18,7 +18,7 @@ All traffic is outbound HTTPS. SSH is reachable only through Tailscale; ufw deni
 | Path | Purpose |
 | --- | --- |
 | `ping.sh` | Pings every target with timeout and retry, reports to Healthchecks and Telegram, exits 1 if anything failed |
-| `usage.py` | Reads quota: Codex rollout files, `agy -p /usage`, Claude OAuth usage endpoint. `--html` renders the Telegram tables |
+| `usage.py` | Reads quota live without sending a prompt: `codex app-server` (`account/rateLimits/read`), `agy -p /usage --output-format json`, Claude OAuth usage endpoint. Falls back to the last known value, marked `*`. `--html` renders the Telegram tables |
 | `bot.py` | Long-polling Telegram listener for `/usage`. Only answers `TG_CHAT_ID` |
 | `systemd/` | Unit templates. `install.sh` fills in user, home, schedule and timezone |
 | `install.sh` | Idempotent bootstrap for a fresh Ubuntu 24.04 host |
@@ -130,7 +130,8 @@ Adding a Codex account means logging in with `CODEX_HOME=~/.codexN` and adding `
 ## Known limits
 
 - Claude usage comes from an undocumented endpoint and needs the full `/login` credentials, not a `setup-token`.
-- Between pings, `/usage` shows Codex figures from the last ping, and Claude as `stale` once its access token has expired. Refreshing either would mean running the CLI, which starts a 5-hour window at the wrong time.
+- Nothing in `usage.py` sends a prompt, so `/usage` never starts a 5-hour window. The cost: Claude's access token (about 8 hours) is refreshed only by the scheduled ping, so with the default schedule Claude shows its last known value, marked `*`, between 05:00 and 06:00.
+- When a live read fails, the row shows the last known value from `~/.cache/pinger/usage.json` (or, for Codex, the newest session file), marked `*` with its time.
 - Telegram on some Android clients does not render code blocks in a monospace font, so the report keeps the bar column first and has no header row.
 
 ## License

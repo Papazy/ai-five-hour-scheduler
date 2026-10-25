@@ -46,9 +46,7 @@ def usage_report():
         body = out.stdout.strip() or "⚠️ usage.py returned nothing: " + html.escape(out.stderr[-300:])
     except Exception as exc:
         body = "⚠️ usage.py failed: " + html.escape(str(exc))
-    return (f"📊 <b>Usage {time.strftime('%H:%M %Z')}</b>\n{body}\n"
-            "<i>Codex figures are from the last ping. claude shows stale "
-            "when its token expired; it refreshes at the next ping.</i>")
+    return f"📊 <b>Usage {time.strftime('%H:%M %Z')}</b>\n{body}"
 
 
 def handle(message):
