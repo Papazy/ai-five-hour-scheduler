@@ -242,12 +242,12 @@ def table(rows, window, reset_pattern):
 
 def telegram(rows):
     legend = " <i>· used · resets · account</i>"
-    parts = ["<b>5-hour window</b>" + legend, table(rows, "five", "%H:%M"),
-             "<b>Weekly</b>" + legend, table(rows, "week", "%d/%m")]
+    parts = ["▸ <b>5-hour window</b>" + legend, table(rows, "five", "%H:%M"),
+             "▸ <b>Weekly</b>" + legend, table(rows, "week", "%d/%m")]
     hot = [f"{name} {label} {u[w][0]:.0f}%" for name, u in rows if isinstance(u, dict)
            for w, label in (("five", "5h"), ("week", "weekly")) if u[w][0] >= WARN_PCT]
     if hot:
-        parts.append("<b>Running low:</b> " + html.escape(", ".join(hot)))
+        parts.append("▲ <b>Running low:</b> " + html.escape(", ".join(hot)))
     old = [f"{name} {fmt(u['asof'], '%H:%M')}" for name, u in rows if isinstance(u, dict) and "asof" in u]
     if old:
         parts.append("<i>* not live, last known values as of: " + html.escape(", ".join(old)) + "</i>")

@@ -43,10 +43,10 @@ def usage_report():
     try:
         out = subprocess.run(["python3", USAGE, "--html", *ACCOUNTS],
                              capture_output=True, text=True, timeout=120)
-        body = out.stdout.strip() or "<b>usage.py returned nothing:</b> " + html.escape(out.stderr[-300:])
+        body = out.stdout.strip() or "▲ <b>usage.py returned nothing:</b> " + html.escape(out.stderr[-300:])
     except Exception as exc:
-        body = "<b>usage.py failed:</b> " + html.escape(str(exc))
-    return f"<b>Usage · {time.strftime('%H:%M %Z')}</b>\n{body}"
+        body = "▲ <b>usage.py failed:</b> " + html.escape(str(exc))
+    return f"▤ <b>Usage · {time.strftime('%H:%M %Z')}</b>\n{body}"
 
 
 def handle(message):
